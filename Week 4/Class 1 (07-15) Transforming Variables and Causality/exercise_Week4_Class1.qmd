@@ -1,0 +1,761 @@
+---
+title: "Week 4 · Class 1: Practice Exercises"
+subtitle: "Transforming Variables & Causality"
+date: "2026"
+format:
+  pdf:
+    toc: false
+    number-sections: true
+    colorlinks: true
+---
+
+```{r}
+#| include: false
+library(tidyverse)
+library(knitr)
+library(formatR)
+# When running chunks interactively, set the working directory to this file's
+# folder so the relative data/ paths resolve. (During render, knitr already
+# uses the document's directory, so this is skipped.)
+if (requireNamespace("rstudioapi", quietly = TRUE) && rstudioapi::isAvailable()) {
+  .doc_path <- rstudioapi::getSourceEditorContext()$path
+  if (length(.doc_path) == 1 && nzchar(.doc_path)) setwd(dirname(.doc_path))
+}
+opts_chunk$set(tidy.opts = list(width.cutoff = 60), tidy = FALSE)
+```
+
+# Segment A — Transforming and Creating Variables
+## Worked Example: Recoding with case_when() (read this first)
+
+Before the exercises, here is one complete transformation, start to finish. Use it as your template.
+
+**Goal**: turn a numeric income variable (in dollars) into a three-level bracket, then count respondents per bracket.
+
+```r
+survey <- survey %>%
+  mutate(
+    income_k = income / 1000,                  # step 1: put income in $1000s
+    bracket = case_when(                       # step 2: three+ outcomes -> case_when()
+      income_k < 40              ~ "Lower",
+      income_k >= 40 & income_k < 100 ~ "Middle",
+      income_k >= 100            ~ "Upper"
+    )
+  )
+
+survey %>% count(bracket)                      # step 3: always check your new variable
+```
+
+**Why each piece matters:**
+
+1. `mutate()` adds columns and keeps every row — the data does not shrink.
+2. Each `case_when()` line is `condition ~ label`. Conditions are checked **top to bottom**; the first TRUE wins.
+3. Every condition must evaluate to TRUE or FALSE. A row matching *no* condition becomes `NA` — that is a signal to check your logic, not an error.
+4. The final `count()` is the habit that catches mistakes: if a bracket has zero rows or `NA` appears, a condition is wrong.
+
+The exercises below follow this same shape. When you use AI for the later ones, paste this example into your prompt as the style you want.
+
+# Non-AI Exercises
+
+## 1. Understanding mutate()
+
+### 1.1 Multiple Choice: mutate() Function
+
+What does the `mutate()` function do?
+
+a) Removes columns from a data frame
+b) Creates new columns or modifies existing ones
+c) Filters rows based on conditions
+d) Sorts data by a variable
+
+Answer: _____
+
+### 1.2 Code Detective: Basic mutate()
+
+What does this code create?
+
+```r
+data %>%
+  mutate(
+    vote_margin = dem_votes - rep_votes,
+    winner = if_else(vote_margin > 0, "Democrat", "Republican")
+  )
+```
+
+Line 3 creates: _____
+Line 4 creates: _____
+
+### 1.3 Fill in the Blanks: Variable Types
+
+When creating new variables, we often need to:
+
+1. Calculate _____ between existing variables
+2. _____ text variables into categories
+3. Create _____ (TRUE/FALSE) indicators
+4. Convert between _____ types
+5. Handle _____ values appropriately
+
+Word bank: differences, recode, logical, data, missing
+
+## 2. Conditional Logic
+
+### 2.1 Match: if_else() vs case_when()
+
+Match each function with when to use it:
+
+**Functions:**
+a) if_else()
+b) case_when()
+
+**Use cases:**
+1. Creating a variable with only two possible outcomes
+2. Creating a variable with multiple categories
+3. Simple yes/no binary coding
+4. Complex multi-condition logic
+
+Matches: a = _____ and _____, b = _____ and _____
+
+### 2.2 Code Detective: case_when()
+
+What categories does this code create?
+
+```r
+data %>%
+  mutate(
+    age_group = case_when(
+      age < 30 ~ "Young",
+      age < 50 ~ "Middle",
+      age < 65 ~ "Older",
+      TRUE ~ "Senior"
+    )
+  )
+```
+
+For someone age 25: _____
+For someone age 45: _____
+For someone age 70: _____
+
+### 2.3 Spot the Error
+
+What's wrong with this case_when() statement?
+
+```r
+mutate(
+  income_cat = case_when(
+    income < 30000 ~ "Low",
+    income < 50000 ~ "Medium",
+    income < 30000 ~ "Low",
+    TRUE ~ "High"
+  )
+)
+```
+
+Problem: _____
+
+## 3. Working with Proportions
+
+### 3.1 Multiple Choice: Calculating Proportions
+
+To calculate the proportion of Democrats in a dataset, you would:
+
+a) Count Democrats and divide by Republicans
+b) Count Democrats and divide by total observations
+c) Count total and divide by Democrats
+d) Use mean() on a logical variable
+
+Answer: _____
+
+### 3.2 True or False: summarise()
+
+Mark each statement as True (T) or False (F):
+
+_____ summarise() reduces multiple rows to a single summary row
+_____ You can calculate multiple statistics in one summarise() call
+_____ summarise() automatically groups by all variables
+_____ n() counts the number of rows in each group
+_____ summarise() can only calculate numeric summaries
+
+### 3.3 Fill in the Code
+
+Complete this code to calculate turnout rate:
+
+```r
+data %>%
+  summarise(
+    total_voters = _____,
+    total_voted = sum(_____ == "Yes"),
+    turnout_rate = _____ / _____
+  )
+```
+
+## 4. Advanced Transformations
+
+### 4.1 Match: Functions and Purposes
+
+Match each function with its purpose:
+
+**Functions:**
+a) round()
+b) log()
+c) sqrt()
+d) abs()
+e) lag()
+
+**Purposes:**
+1. Remove decimal places
+2. Transform skewed data
+3. Calculate square root
+4. Make negative values positive
+5. Get previous row's value
+
+Matches: a = _____, b = _____, c = _____, d = _____, e = _____
+
+### 4.2 Code Detective: Complex Transformation
+
+What does this code calculate?
+
+```r
+data %>%
+  group_by(state) %>%
+  mutate(
+    state_avg = mean(income, na.rm = TRUE),
+    income_diff = income - state_avg,
+    above_avg = income_diff > 0
+  )
+```
+
+This code calculates: _____
+
+# AI Exercises
+
+**Tips for Working with Claude:**
+
+- Ask for **R code using only tidyverse** (no other packages)
+- Request **simple, focused answers** to your specific question—not complex analyses
+- Ask Claude to **explain what the code is doing** since you're learning
+- Avoid asking for visualizations or plots in these exercises
+- Include the output of `glimpse()` in your prompt so Claude knows your variable names
+
+**Example prompt:** "Using tidyverse in R, create a new variable called ideology_category using case_when() that categorizes ideology_score into 'left', 'center', and 'right' based on terciles. Keep the code simple and explain what each line does. Here is what my data looks like: [paste glimpse output]"
+
+For each AI exercise:
+- Work with Claude to analyze the data
+- Record your prompts and key findings
+
+## 5. Creating Political Variables
+
+**Dataset: data/legislative_votes.csv**
+
+**Description**: Roll call voting data with legislator information.
+
+**Variables**:
+- `legislator_id`: Unique identifier (int)
+- `name`: Legislator name (chr)
+- `party`: Political party (chr)
+- `state`: State abbreviation (chr)
+- `district`: District number (int)
+- `ideology_score`: -1 (liberal) to 1 (conservative) (dbl)
+- `vote_attendance`: Percentage of votes attended (dbl)
+- `bills_sponsored`: Number of bills sponsored (int)
+- `years_service`: Years in office (int)
+- `committee_count`: Number of committees served on (int)
+
+### 5.1 Initial Data Exploration
+
+```{r}
+# Load the dataset
+legislators <- read_csv("data/legislative_votes.csv")
+
+# Examine the data
+glimpse(legislators)
+```
+
+### 5.2 Creating Categorical Variables
+
+Ask Claude to help you create:
+- An "ideology_category" variable (left, center, right) based on terciles of `ideology_score`
+- An "effectiveness" score based on bills sponsored and committee work (assume more than 4 is effective)
+- A "seniority" category based on years of service (>20 is senior)
+
+```{r}
+
+```
+
+### 5.3 Calculating Party Metrics
+
+Work with Claude to calculate party-level statistics for the variables you created in the last step.  For each party, what percent of legislators are in each category you created.
+
+```{r}
+
+```
+
+## 6. Education and Political Participation
+
+**Dataset: data/civic_engagement.csv**
+
+**Description**: Survey data on education and political participation.
+
+**Variables**:
+- `respondent_id`: Unique identifier (int)
+- `education`: Highest degree earned (chr)
+- `age`: Age in years (int)
+- `income`: Annual income (dbl)
+- `voted_2020`: Whether voted in 2020 (chr: Yes/No)
+- `political_interest`: 1-10 scale (int)
+- `volunteer_hours`: Political volunteer hours per month (int)
+- `donations`: Political donations in dollars (dbl)
+- `social_media_political`: Hours per week on political social media (dbl)
+
+### 6.1 Loading and Initial Transformation
+
+```{r}
+# Load the dataset
+civic <- read_csv("data/civic_engagement.csv")
+
+# Check the structure
+glimpse(civic)
+```
+
+### 6.2 Education and Engagement Index
+
+Work with Claude to:
+- Recode education into "High School + " and "Less than High School"
+- Create a variable called `activist` that is TRUE if the person donated more than the median, volunteered more than the median and voted in 2020.
+
+```{r}
+
+```
+
+## 7. Campaign Finance Transformations
+
+**Dataset: data/campaign_finance_2024.csv**
+
+**Description**: Campaign contribution data for 2024 elections.
+
+**Variables**:
+- `contribution_id`: Unique identifier (int)
+- `candidate`: Candidate name (chr)
+- `party`: Political party (chr)
+- `office`: Office sought (chr)
+- `amount`: Contribution amount (dbl)
+- `date`: Date of contribution (date)
+- `contributor_type`: Individual, PAC, etc. (chr)
+- `state`: Contributor state (chr)
+- `employer`: Contributor employer (chr)
+- `occupation`: Contributor occupation (chr)
+
+### 7.1 Data Preparation
+
+```{r}
+# Load the dataset
+finance <- read_csv("data/campaign_finance_2024.csv")
+
+# Explore the data
+glimpse(finance)
+
+```
+
+### 7.2 Creating Contribution Categories
+
+Ask Claude to help you:
+- Identify small donors vs major donors (< mean or > mean)
+- Create variables for in-state vs out-of-state contributions (assume that your state is New York)
+
+```{r}
+
+```
+
+### 7.3 Time-Based Transformations
+
+Work with Claude to summarize the data.
+- When was the most money given? Contribution timing (early, middle, late in campaign)
+- How much money was given each month? 
+- How much was contributed over time
+
+```{r}
+
+```
+
+## 8. Demographic Transformations
+
+**Dataset: data/census_political.csv**
+
+**Description**: Census data merged with political outcomes.
+
+**Variables**:
+- `county_id`: County FIPS code (int)
+- `county_name`: County name (chr)
+- `state`: State abbreviation (chr)
+- `population`: Total population (int)
+- `median_age`: Median age (dbl)
+- `pct_college`: Percent with college degree (dbl)
+- `median_income`: Median household income (dbl)
+- `unemployment_rate`: Unemployment percentage (dbl)
+- `dem_vote_share_2020`: Democratic vote share 2020 (dbl)
+- `turnout_2020`: Voter turnout 2020 (dbl)
+
+### 8.1 Initial Exploration
+
+```{r}
+# Load the dataset
+census <- read_csv("data/census_political.csv")
+
+# Look at the data
+glimpse(census)
+```
+
+### 8.2 Creating Composite Indicators
+
+Work with Claude to:
+- Create urban/rural classifications based on population density (above or below the median)
+- Create a variable that captures the quartiles of unemployment 
+
+```{r}
+
+```
+
+# Segment B — Causality
+
+# Non-AI Exercises
+
+## 1. Three Requirements for Causality
+
+### 1.1 Match: Causal Requirements
+
+Match each requirement with its definition:
+
+**Requirements:**
+a) Association
+b) Temporal ordering
+c) No confounding
+
+**Definitions:**
+1. The cause must come before the effect
+2. No third variable explains both X and Y
+3. X and Y must be statistically related
+
+Matches: a = _____, b = _____, c = _____
+
+### 1.2 Multiple Choice: Ice Cream and Crime
+
+Why is "ice cream sales cause crime" a spurious correlation?
+
+a) Ice cream and crime are not associated
+b) Crime happens before ice cream sales
+c) Temperature affects both ice cream sales and crime
+d) The correlation is too weak
+
+Answer: _____
+
+### 1.3 True or False: Causation
+
+Mark each statement as True (T) or False (F):
+
+_____ Correlation always implies causation
+_____ Causation requires temporal ordering
+_____ Large correlations are more likely to be causal
+_____ Randomized experiments help establish causation
+_____ Observational data can never show causation
+
+### 1.4 Multiple Choice: What Correlation Alone Can Tell Us
+
+We find that counties with more coffee shops have higher voter turnout. Even before establishing whether coffee shops *cause* turnout, this correlation is still useful because it lets us:
+
+a) Conclude that opening more coffee shops would raise turnout
+b) Predict turnout — knowing a county's coffee-shop density helps us anticipate its turnout
+c) Recommend coffee shops as a get-out-the-vote strategy
+d) Rule out any confounding variables
+
+Answer: _____
+
+## 2. Identifying Confounders
+
+### 2.1 Fill in the Blanks: Confounding
+
+A confounding variable:
+
+1. Affects both the _____ and the _____
+2. Creates a _____ relationship between X and Y
+3. Must occur _____ to both X and Y
+4. Can be controlled through _____ assignment
+5. Makes causal inference _____
+
+Word bank: treatment, outcome, spurious, prior, random, difficult
+
+### Match: Examples
+
+Match each scenario with the likely confounding variable:
+
+**Scenarios:**
+a) Wealthy people live longer
+b) Students with more books at home do better in school
+c) Cities with more police have more crime
+d) Married people are happier
+
+**Confounders:**
+1. Crime rates drive police hiring
+2. Access to healthcare
+3. Parents' education and income
+4. Selection into marriage
+
+Matches: a = _____, b = _____, c = _____, d = _____
+
+## 3. Temporal Ordering
+
+### 3.1 Multiple Choice: Time Order
+
+Which scenario violates temporal ordering for causation?
+
+a) Studying causes better grades
+b) Rain causes wet streets
+c) High crime causes more police hiring last year
+d) Tall children have tall parents
+
+Answer: _____
+
+### 3.2 Spot the Error: Causal Claims
+
+What's wrong with this causal claim?
+
+"States with stricter gun laws have more gun violence, so gun laws cause violence."
+
+Problem: _____
+
+### 3.3 Spot the Error: Post Hoc Reasoning
+
+A mayor argues: "We adopted a new policing policy in 2021, and crime fell every year afterward — the policy cut crime." The data show crime had been falling by about the same amount each year *before* 2021 as well.
+
+What reasoning error is this, and why does the timing alone not prove the policy worked?
+
+Problem: _____
+
+## 4. Alternative Explanations
+
+### 4.1 Multiple Choice: Spurious Correlations
+
+The correlation between divorce rate and margarine consumption is likely:
+
+a) Causal - margarine causes divorce
+b) Causal - divorce causes margarine consumption
+c) Spurious - both follow similar time trends
+d) Reversed - the causation goes backwards
+
+Answer: _____
+
+### 4.2 True or False: Research Design
+
+Mark each statement as True (T) or False (F):
+
+_____ Random assignment eliminates all confounders
+_____ Large samples guarantee causal inference
+_____ Natural experiments can establish causation
+_____ Correlation is necessary but not sufficient for causation
+_____ Time series data always shows causation
+
+### 4.3 Match: Causal Mechanisms
+
+Match each political example with its mechanism:
+
+**Examples:**
+a) Education → Higher income
+b) Campaign spending → Votes
+c) Media coverage → Public opinion
+d) Voting laws → Turnout
+
+**Mechanisms:**
+1. Increased name recognition
+2. Skills and credentials
+3. Agenda setting and framing
+4. Access and convenience
+
+Matches: a = _____, b = _____, c = _____, d = _____
+
+### 4.4 Multiple Choice: Selecting on the Outcome
+
+A researcher studies **only** completed suicide-terror campaigns and finds that nearly all occurred under a foreign military occupation, concluding that occupation causes suicide terrorism. Why is this reasoning flawed?
+
+a) Foreign occupation and suicide terrorism are not associated
+b) By studying only cases where terrorism occurred (selecting on the outcome), the researcher never sees the many occupations that produced *no* terrorism
+c) The correlation is too weak to interpret
+d) Suicide terrorism causes occupation, not the other way around
+
+Answer: _____
+
+# AI Exercises
+
+**Tips for Working with Claude:**
+
+- Ask for **R code using only tidyverse** (no other packages)
+- Request **simple, focused answers** to your specific question—not complex analyses
+- Ask Claude to **explain what the code is doing** since you're learning
+- Avoid asking for visualizations or plots in these exercises
+- Include the output of `glimpse()` in your prompt so Claude knows your variable names
+
+**Example prompt:** "Using tidyverse in R, calculate the correlation between min_wage and unemployment_rate to test for association. Keep the code simple and explain what each line does. Here is what my data looks like: [paste glimpse output]"
+
+For each AI exercise:
+- Work with Claude to analyze the data
+- Record your prompts and key findings
+
+## 5. Testing Causal Claims
+
+**Dataset: data/minimum_wage_effects.csv**
+
+**Description**: State-level data on minimum wage changes and employment.
+
+**Variables**:
+
+- `state`: State name (chr)
+- `year`: Year of observation (int)
+- `min_wage`: State minimum wage (dbl)
+- `unemployment_rate`: Unemployment percentage (dbl)
+- `teen_employment_rate`: Teen employment percentage (dbl)
+- `median_income`: State median income (dbl)
+- `cost_of_living`: Cost of living index (dbl)
+- `gdp_growth`: State GDP growth rate (dbl)
+- `border_state_wage`: Average minimum wage in bordering states (dbl)
+
+### 5.1 Initial Exploration
+
+```{r}
+# Load the dataset
+wage_data <- read_csv("data/minimum_wage_effects.csv")
+
+# Examine the structure
+glimpse(wage_data)
+```
+
+### 5.2 Checking Causal Requirements
+
+Ask Claude to help you:
+- Test for association between minimum wage and employment
+
+```{r}
+
+```
+
+### 5.3 Alternative Explanations
+
+Work with Claude to explore alternative explanations for any patterns you find.
+
+## 6. Media Effects on Politics
+
+**Dataset: data/media_influence_study.csv**
+
+**Description**: Data on media consumption and political attitudes.
+
+**Variables**:
+
+- `respondent_id`: Unique identifier (int)
+- `survey_wave`: Wave 1 or 2 (int)
+- `fox_news_hours`: Weekly hours watching Fox News (dbl)
+- `msnbc_hours`: Weekly hours watching MSNBC (dbl)
+- `conservative_score`: Conservative attitudes, 0-100 (dbl)
+- `trump_approval`: Trump approval, 0-100 (dbl)
+- `age`: Age in years (int)
+- `education`: Education level (chr)
+- `party_id`: Party identification (chr)
+- `political_interest`: Interest in politics, 1-10 (int)
+
+### 6.1 Media and Attitudes
+
+```{r}
+# Load the dataset
+media_data <- read_csv("data/media_influence_study.csv")
+
+# Check the structure
+glimpse(media_data)
+```
+
+### 6.2 Reverse Causation
+
+Work with Claude to:
+- Test whether conservatives choose Fox News (selection)
+
+```{r}
+
+```
+
+### 6.3 Confounding Factors
+
+Ask Claude to help identify and control for variables that might affect both media choice and political attitudes.
+
+## 7. Campaign Finance and Elections
+
+**Dataset: data/campaign_causality.csv**
+
+**Description**: Congressional election data with spending information.
+
+**Variables**:
+
+- `district_id`: Congressional district (chr)
+- `year`: Election year (int)
+- `incumbent_party`: Party of incumbent (chr)
+- `incumbent_spending`: Incumbent campaign spending (dbl)
+- `challenger_spending`: Challenger campaign spending (dbl)
+- `incumbent_vote_share`: Incumbent's vote percentage (dbl)
+- `presidential_vote`: Presidential vote in district (dbl)
+- `median_income`: District median income (dbl)
+- `incumbent_scandal`: Whether incumbent had scandal (lgl)
+- `quality_challenger`: Whether challenger held prior office (lgl)
+
+### 7.1 Money and Votes
+
+```{r}
+# Load the dataset
+campaign_data <- read_csv("data/campaign_causality.csv")
+
+# Explore the data
+glimpse(campaign_data)
+```
+
+### 7.2 Endogeneity Problems
+
+Ask Claude to help you understand:
+- Why might successful candidates raise more money?
+- How does expected competitiveness affect fundraising?
+- What confounders affect both money and votes?
+
+### 7.3 Natural Experiments
+
+Work with Claude to identify situations where spending might be more randomly assigned (e.g., unexpected donations, spending limits).
+
+## 8. Policy Evaluation
+
+**Dataset: data/policy_intervention.csv**
+
+**Description**: Data on states before/after policy changes.
+
+**Variables**:
+
+- `state`: State name (chr)
+- `year`: Year (int)
+- `policy_adopted`: Whether state adopted policy (lgl)
+- `year_adopted`: Year policy was adopted (int)
+- `outcome_variable`: Policy outcome of interest (dbl)
+- `population`: State population (int)
+- `unemployment`: Unemployment rate (dbl)
+- `gov_party`: Governor's party (chr)
+- `leg_control`: Party controlling legislature (chr)
+- `neighbor_adopted`: Whether neighboring state has policy (lgl)
+
+### 8.1 Policy Effects
+
+```{r}
+# Load the dataset
+policy_data <- read_csv("data/policy_intervention.csv")
+
+# Look at the structure
+glimpse(policy_data)
+```
+
+### 8.2 Selection into Treatment
+
+Work with Claude to:
+- Identify which states adopted the policy and when
+- Check pre-treatment trends
+
+```{r}
+
+```
+
+\newpage
